@@ -3,7 +3,7 @@
 Compiler written in Nim.
 Compiles multiple languages to c.
 
-#Supported languages:
+# Supported languages:
 Brainfuck
 Lisp
 
