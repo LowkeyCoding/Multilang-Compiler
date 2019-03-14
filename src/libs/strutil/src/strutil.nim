@@ -27,7 +27,6 @@ proc stringFind(skibTable: SkipTable,str,sub: string,start: Natural = 0,last = 0
 
   if subLast == -1:
     return start
-  # https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore%E2%80%93Horspool_algorithm
   var skip = start
 
   while last - skip >= subLast:
@@ -43,6 +42,7 @@ proc stringFind(skibTable: SkipTable,str,sub: string,start: Natural = 0,last = 0
 #USAGE: find(string, substring)
 #BEHAVIOR: Finds substring in string and returns start position of the string.
 #BEHAVIOR: If substring is not found it will return -1.
+#IMPLEMENTAION OF: https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore%E2%80%93Horspool_algorithm
 proc find*(str: string, sub: string): int =
   var skipTable {.noinit.}: SkipTable
   initSkipTable(skipTable, sub)
