@@ -1,5 +1,6 @@
-#String manipulation
 import os
+#String manipulation
+import ./libs/files/src/files.nim
 import ./libs/strutil/src/strutil.nim
 
 proc generateCodeC(code: string):string = 
@@ -36,17 +37,6 @@ proc generateCode(code: string, lang: string = "C"):string =
     of "C":
       return generateCodeC(code)
 
-proc writeToFile(code: string, fileName: string) =
-  var file = open(fileName, fmWrite)
-  file.write(code)
-
-proc readFile(fileName: string):string =
-  var result = ""
-  var file = open(fileName)
-  for line in file.lines:
-    result &= line
-  return result
-
 when isMainModule:
   var inputFileName = ""
   var outputFileName = ""
@@ -65,4 +55,4 @@ when isMainModule:
         lang = paramStr(i+1)
       of "-l":
         lang = paramStr(i+1)
-  writeToFile(generateCode(readFile(inputFileName), lang),outputFileName)
+  writeToFile(generateCode(readFromFile(inputFileName), lang),outputFileName)
