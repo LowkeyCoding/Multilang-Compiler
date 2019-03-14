@@ -41,7 +41,7 @@ proc stringFind(skibTable: SkipTable,str,sub: string,start: Natural = 0,last = 0
   return -1
 
 #USAGE: find(string, substring)
-#BEHAVIOR: Finds substring in string.
+#BEHAVIOR: Finds substring in string and returns start position of the string.
 #BEHAVIOR: If substring is not found it will return -1.
 proc find*(str: string, sub: string): int =
   var skipTable {.noinit.}: SkipTable
