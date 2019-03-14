@@ -1,4 +1,4 @@
-# Brainfuck-Compiler
+# Multilang-Compiler
 
 Compiler written in Nim.
 Compiles multiple languages to c.
