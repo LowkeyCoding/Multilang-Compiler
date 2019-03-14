@@ -5,8 +5,10 @@ Compiles multiple languages to c.
 
 ## Supported languages:
 Brainfuck  
-Lisp
-
+Lisp(\*)  
+Perl(\*)  
+Python(\*)  
+(\*) In the works
 ## Usage:
 BFC ARGS
 ### ARGS:
