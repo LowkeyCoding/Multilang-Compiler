@@ -5,39 +5,46 @@ import /libs/files/src/files
 #String manipulation
 import /libs/strutil/src/strutil
 
-proc evalCodeLoop(code: string, index: int, oldLoop, newMaxDepth, newIndex: var int, verbose: bool) = 
+proc evalCodeLoop(code: string, startIndex: int, oldLoop, newMaxDepth, newIndex, currentDepth: var int, verbose: bool) = 
   var maxDepth = newMaxDepth;
-  var currentDepth = 0;
-  var index = index;
+  var index = startIndex;
   var loop = 0;
-  while true:
-    if code[index] == '[':
-      echo "Loops: " & $oldLoop
-      evalCodeLoop(code, index+1, loop, maxDepth, index, verbose)
-    elif code[index] == '+':
-        inc loop
-    elif code[index] == '>':
-      inc currentDepth;
-      if currentDepth > maxDepth:
+  for i in 1..oldLoop:
+    while true:
+      if code[index] == '[':
         if verbose:
-          echo "Max depth: " & $maxDepth;
-        maxDepth = currentDepth;
-    elif code[index] == '<':
-      dec currentDepth;
-    elif (code[index] == ']') == (oldLoop < 0):
+          echo "Loops: " & $oldLoop
+        evalCodeLoop(code, index+1, loop, maxDepth, index, currentDepth, verbose)
+        if currentDepth > maxDepth:
+          if verbose:
+            echo "Max depth: " & $maxDepth;
+          maxDepth = currentDepth;
+      elif code[index] == '+':
+          inc loop
+      elif code[index] == '>':
+        inc currentDepth;
+        if currentDepth > maxDepth:
+          if verbose:
+            echo "Max depth: " & $maxDepth;
+          maxDepth = currentDepth;
+      elif code[index] == '<':
+        dec currentDepth;
+      elif code[index] == ']':
+        break;
+      else:
+        loop = 0;
+        inc index
+        continue;
+      inc index
+    dec oldLoop
+    if oldLoop == 0:
       newMaxDepth = maxDepth;
       newIndex = index;
       return
-    else:
-      loop = 0;
-      inc index
-      continue;
-    dec oldLoop
-    inc index
 
 proc evalCode(code: string, verbose: bool): int = 
   var maxDepth = 0;
-  var currentDepth = 0;
+  var currentDepth = 1;
   var index = 0;
   var loop = 0;
   for i, op in code:
@@ -56,7 +63,7 @@ proc evalCode(code: string, verbose: bool): int =
         of '[':
           if verbose:
             echo "Loops: " & $loop;
-          evalCodeLoop(code, i+1, loop, maxDepth, index, verbose);
+          evalCodeLoop(code, i+1, loop, maxDepth, index, currentDepth, verbose);
         else: 
           loop = 0;
       inc index;
