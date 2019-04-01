@@ -70,7 +70,7 @@ proc depthScan(code: string, verbose: bool): int =
       inc index;
   return maxDepth
 
-#-----Code genration-----#
+#-----Code optimization-----#
 proc oprandCombiner(code: string, currentIndex: int, trueIndex, tapLevel: var int, result: var string, oprand: char, oprandCode: string, oprandCodeMulti: string) =
   var whileFlag = true;
   var opCount = 1;
@@ -85,6 +85,7 @@ proc oprandCombiner(code: string, currentIndex: int, trueIndex, tapLevel: var in
   else:
     result &= addString("  ",tapLevel) & oprandCode;
 
+#-----Code genration-----#
 proc generateCodeC(code: string, staticDepth: bool, verbose: bool): string = 
   var trueIndex = 0;
   var tapLevel = 1;
@@ -128,6 +129,7 @@ proc generateCode(code: string, lang: string = "C", staticDepth: bool, verbose: 
     of "C":
       return generateCodeC(code, staticDepth, verbose)
 
+#-----Userinput handler-----#
 when isMainModule:
   var inputFileName = "";
   var outputFileName = "";
