@@ -86,9 +86,8 @@ proc oprandCombiner(code: string, currentIndex: int, trueIndex, tapLevel: var in
     result &= addString("  ",tapLevel) & oprandCode;
 
 proc generateCodeC(code: string, staticDepth: bool, verbose: bool): string = 
-  var index = 0;
+  var trueIndex = 0;
   var tapLevel = 1;
-  var code = code;
   var result = "";
   if staticDepth:
     result = "#include <stdio.h>\nchar tape[" & $(2000000000) & "];\nchar *ptr;\nint main() {\n  ptr=tape;\n";
@@ -96,17 +95,17 @@ proc generateCodeC(code: string, staticDepth: bool, verbose: bool): string =
     var maxDepth = depthScan(code, verbose)
     result = "#include <stdio.h>\nchar tape[" & $maxDepth & "];\nchar *ptr;\nint main() {\n  ptr=tape;\n";
 
-  for i, op in code:
-    if i == index:
-      case code[i]:
+  for currentIndex, oprand in code:
+    if currentIndex == trueIndex:
+      case code[currentIndex]:
         of '>':
-          oprandCombiner(code, i, index, tapLevel, result, '>', "ptr++;\n", "ptr+=")
+          oprandCombiner(code, currentIndex, trueIndex, tapLevel, result, '>', "ptr++;\n", "ptr+=")
         of '<':
-          oprandCombiner(code, i, index, tapLevel, result, '<', "ptr--;\n", "ptr-=")
+          oprandCombiner(code, currentIndex, trueIndex, tapLevel, result, '<', "ptr--;\n", "ptr-=")
         of '+':
-          oprandCombiner(code, i, index, tapLevel, result, '+', "(*ptr)++;\n", "(*ptr)+=")
+          oprandCombiner(code, currentIndex, trueIndex, tapLevel, result, '+', "(*ptr)++;\n", "(*ptr)+=")
         of '-':
-          oprandCombiner(code, i, index, tapLevel, result, '-', "(*ptr)--;\n", "(*ptr)-=")
+          oprandCombiner(code, currentIndex, trueIndex, tapLevel, result, '-', "(*ptr)--;\n", "(*ptr)-=")
         of '.':
           result &= addString("  ",tapLevel) & "putchar(*ptr);\n"
         of ',':
@@ -119,8 +118,8 @@ proc generateCodeC(code: string, staticDepth: bool, verbose: bool): string =
           dec tapLevel
         else:
           if verbose:
-            echo "invalid char: ", op; 
-      inc index;
+            echo "invalid char: ", oprand; 21½½
+      inc trueIndex;
   return result & "return 1;\n}";
 
 #-----Functioncallers-----#
