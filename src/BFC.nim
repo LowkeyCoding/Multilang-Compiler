@@ -5,7 +5,8 @@ import /libs/files/src/files
 #String manipulation
 import /libs/strutil/src/strutil
 
-proc evalCodeLoop(code: string, startIndex: int, oldLoop, newMaxDepth, newIndex, currentDepth: var int, verbose: bool) = 
+#-----Depthscan-----#
+proc depthScanLoop(code: string, startIndex: int, oldLoop, newMaxDepth, newIndex, currentDepth: var int, verbose: bool) = 
   var maxDepth = newMaxDepth;
   var index = startIndex;
   var loop = 0;
@@ -14,7 +15,7 @@ proc evalCodeLoop(code: string, startIndex: int, oldLoop, newMaxDepth, newIndex,
       if code[index] == '[':
         if verbose:
           echo "Loops: " & $oldLoop
-        evalCodeLoop(code, index+1, loop, maxDepth, index, currentDepth, verbose)
+        depthScanLoop(code, index+1, loop, maxDepth, index, currentDepth, verbose)
         if currentDepth > maxDepth:
           if verbose:
             echo "Max depth: " & $maxDepth;
@@ -42,7 +43,7 @@ proc evalCodeLoop(code: string, startIndex: int, oldLoop, newMaxDepth, newIndex,
       newIndex = index;
       return
 
-proc evalCode(code: string, verbose: bool): int = 
+proc depthScan(code: string, verbose: bool): int = 
   var maxDepth = 0;
   var currentDepth = 1;
   var index = 0;
@@ -63,12 +64,13 @@ proc evalCode(code: string, verbose: bool): int =
         of '[':
           if verbose:
             echo "Loops: " & $loop;
-          evalCodeLoop(code, i+1, loop, maxDepth, index, currentDepth, verbose);
+          depthScanLoop(code, i+1, loop, maxDepth, index, currentDepth, verbose);
         else: 
           loop = 0;
       inc index;
   return maxDepth
 
+#-----Code genration-----#
 proc oprandCombiner(code: string, currentIndex: int, trueIndex, tapLevel: var int, result: var string, oprand: char, oprandCode: string, oprandCodeMulti: string) =
   var whileFlag = true;
   var opCount = 1;
@@ -91,7 +93,7 @@ proc generateCodeC(code: string, staticDepth: bool, verbose: bool): string =
   if staticDepth:
     result = "#include <stdio.h>\nchar tape[" & $(2000000000) & "];\nchar *ptr;\nint main() {\n  ptr=tape;\n";
   else:
-    var maxDepth = evalCode(code, verbose)
+    var maxDepth = depthScan(code, verbose)
     result = "#include <stdio.h>\nchar tape[" & $maxDepth & "];\nchar *ptr;\nint main() {\n  ptr=tape;\n";
 
   for i, op in code:
@@ -121,6 +123,7 @@ proc generateCodeC(code: string, staticDepth: bool, verbose: bool): string =
       inc index;
   return result & "return 1;\n}";
 
+#-----Functioncallers-----#
 proc generateCode(code: string, lang: string = "C", staticDepth: bool, verbose: bool):string =
   case lang:
     of "C":
