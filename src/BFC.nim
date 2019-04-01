@@ -4,10 +4,22 @@ import os
 import /libs/files/src/files
 #String manipulation
 import /libs/strutil/src/strutil
-
+#[
+  
+]#
 #-----Depthscan-----#
-proc depthScanLoop(code: string, startIndex: int, oldLoop, newMaxDepth, newIndex, currentDepth: var int, verbose: bool) = 
-  var maxDepth = newMaxDepth;
+proc depthScanLoop*(code: string, startIndex: int, oldLoop, maxDepth, newIndex, currentDepth: var int, verbose: bool) = 
+  ##[
+      :USAGE: depthScanLoop(code: string, startIndex: int, oldLoop, maxDepth, newIndex, currentDepth: var int, verbose: bool)
+      :BEHAVIOR:  Goes through each operand in the code, to determin the amount of cells needed to run the code.
+      :code: The code to scan through.
+      :startIndex: The starting point in the code.
+      :oldLoop: The number times the code in the loop needs to be run.
+      :maxDepth: Used to update the state of the top level maxDepth.
+      :newIndex: Used to update the state of the top level trueIndex.
+      :currentDepth: Used to update the state of the top level currentDepth.
+      :verbose: Toggles console output.
+  ]##
   var index = startIndex;
   var loop = 0;
   for i in 1..oldLoop:
@@ -39,11 +51,16 @@ proc depthScanLoop(code: string, startIndex: int, oldLoop, newMaxDepth, newIndex
       inc index
     dec oldLoop
     if oldLoop == 0:
-      newMaxDepth = maxDepth;
       newIndex = index;
       return
 
-proc depthScan(code: string, verbose: bool): int = 
+proc depthScan*(code: string, verbose: bool): int = 
+  ##[
+      :USAGE: depthScan(code: string, verbose: bool)
+      :BEHAVIOR: The top level function for keeping track of depthScan
+      :code: The code to scan through.
+      :verbose: Toggles console output.
+  ]##
   var maxDepth = 0;
   var currentDepth = 1;
   var index = 0;
@@ -71,22 +88,41 @@ proc depthScan(code: string, verbose: bool): int =
   return maxDepth
 
 #-----Code optimization-----#
-proc oprandCombiner(code: string, currentIndex: int, trueIndex, tapLevel: var int, result: var string, oprand: char, oprandCode: string, oprandCodeMulti: string) =
+proc operandCombiner*(code: string, currentIndex: int, trueIndex, tapLevel: var int, result: var string, operand: char, operandCode: string, operandCodeMulti: string) =
+  ##[
+      :USAGE: operandCombiner(code: string, currentIndex: int, trueIndex, tapLevel: var int, result: var string, operand: char, operandCode: string, operandCodeMulti: string)
+      :BEHAVIOR: Combines operands of the same type, and adds the the combined operands to result.
+      :code: The code to scan through.
+      :currentIndex: Used to keep track of the loops index.
+      :trueIndex: Used to keep track of the real index.
+      :tapLevels: Used to keep track of indetation.
+      :result: Used to store the generated code.
+      :operand: The operand to combine.
+      :operandCode: The operands equivalent code when only a single operand is present.
+      :operandCodeMulti: The operands equivalent code when multiple operands are present.
+  ]##
   var whileFlag = true;
   var opCount = 1;
-  if(code[currentIndex+1] == oprand):
+  if(code[currentIndex+1] == operand):
     while whileFlag:
-      if code[currentIndex+opCount] == oprand:
+      if code[currentIndex+opCount] == operand:
         inc opCount;
       else:
         whileFlag = false;
     trueIndex += opCount-1;
-    result &= addString("  ", tapLevel) & oprandCodeMulti & $opCount & ";\n";
+    result &= addString("  ", tapLevel) & operandCodeMulti & $opCount & ";\n";
   else:
-    result &= addString("  ",tapLevel) & oprandCode;
+    result &= addString("  ",tapLevel) & operandCode;
 
 #-----Code genration-----#
-proc generateCodeC(code: string, staticDepth: bool, verbose: bool): string = 
+proc generateCodeC*(code: string, staticDepth: bool, verbose: bool): string = 
+  ##[
+      :USAGE: generateCodeC(code: string, staticDepth: bool, verbose: bool)
+      :BEHAVIOR: Used to go through each operand of brainfuck and generate C code 
+      :code: The code to convert to C.
+      :staticDepth: Toggles static vs dynamic depth. Static is close to 32bit limit to give support for more systems.
+      :verbose: Toggles console output.
+  ]##
   var trueIndex = 0;
   var tapLevel = 1;
   var result = "";
@@ -96,17 +132,17 @@ proc generateCodeC(code: string, staticDepth: bool, verbose: bool): string =
     var maxDepth = depthScan(code, verbose)
     result = "#include <stdio.h>\nchar tape[" & $maxDepth & "];\nchar *ptr;\nint main() {\n  ptr=tape;\n";
 
-  for currentIndex, oprand in code:
+  for currentIndex, operand in code:
     if currentIndex == trueIndex:
       case code[currentIndex]:
         of '>':
-          oprandCombiner(code, currentIndex, trueIndex, tapLevel, result, '>', "ptr++;\n", "ptr+=")
+          operandCombiner(code, currentIndex, trueIndex, tapLevel, result, '>', "ptr++;\n", "ptr+=")
         of '<':
-          oprandCombiner(code, currentIndex, trueIndex, tapLevel, result, '<', "ptr--;\n", "ptr-=")
+          operandCombiner(code, currentIndex, trueIndex, tapLevel, result, '<', "ptr--;\n", "ptr-=")
         of '+':
-          oprandCombiner(code, currentIndex, trueIndex, tapLevel, result, '+', "(*ptr)++;\n", "(*ptr)+=")
+          operandCombiner(code, currentIndex, trueIndex, tapLevel, result, '+', "(*ptr)++;\n", "(*ptr)+=")
         of '-':
-          oprandCombiner(code, currentIndex, trueIndex, tapLevel, result, '-', "(*ptr)--;\n", "(*ptr)-=")
+          operandCombiner(code, currentIndex, trueIndex, tapLevel, result, '-', "(*ptr)--;\n", "(*ptr)-=")
         of '.':
           result &= addString("  ",tapLevel) & "putchar(*ptr);\n"
         of ',':
@@ -119,18 +155,30 @@ proc generateCodeC(code: string, staticDepth: bool, verbose: bool): string =
           dec tapLevel
         else:
           if verbose:
-            echo "invalid char: ", oprand; 21½½
+            echo "invalid char: ", operand;
       inc trueIndex;
   return result & "return 1;\n}";
 
 #-----Functioncallers-----#
-proc generateCode(code: string, lang: string = "C", staticDepth: bool, verbose: bool):string =
+proc generateCode*(code: string, lang: string = "C", staticDepth: bool, verbose: bool):string =
+  ##[
+      :USAGE: generateCode(code: string, lang: string, staticDepth: bool, verbose: bool)
+      :BEHAVIOR: Used to select the output language.
+      :code: The code to convert to x language.
+      :lang: The desired language. DEFAULT: C.
+      :staticDepth: Toggles static vs dynamic depth. Static is close to 32bit limit to give support for more systems.
+      :verbose: Toggles console output.
+  ]##
   case lang:
     of "C":
       return generateCodeC(code, staticDepth, verbose)
 
 #-----Userinput handler-----#
-when isMainModule:
+proc userInput*()=
+  ##[
+      :USAGE: userInput()
+      :BEHAVIOR: Takes user input and parses it.
+  ]##
   var inputFileName = "";
   var outputFileName = "";
   var staticDepth = false;
@@ -155,3 +203,6 @@ when isMainModule:
       of "--verbose":
         verbose = true
   writeToFile(generateCode(readFromFile(inputFileName), lang, staticDepth, verbose),outputFileName)
+
+when isMainModule:
+  userInput()

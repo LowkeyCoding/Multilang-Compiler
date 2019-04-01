@@ -1,4 +1,3 @@
-
 type
     SkipTable = array[char,int]
 
