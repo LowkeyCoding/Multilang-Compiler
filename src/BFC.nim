@@ -68,75 +68,43 @@ proc evalCode(code: string, verbose: bool): int =
           loop = 0;
       inc index;
   return maxDepth
-  
-proc generateCodeC(code: string, increasedSize: bool, verbose: bool): string = 
-  var j = 0;
-  var tapLevel = 1;
-  var opCount  = 1;
+
+proc oprandCombiner(code: string, currentIndex: int, trueIndex, tapLevel: var int, result: var string, oprand: char, oprandCode: string, oprandCodeMulti: string) =
   var whileFlag = true;
-  var code = code; #removeUntil(code, "/*", "*\\");
+  var opCount = 1;
+  if(code[currentIndex+1] == oprand):
+    while whileFlag:
+      if code[currentIndex+opCount] == oprand:
+        inc opCount;
+      else:
+        whileFlag = false;
+    trueIndex += opCount-1;
+    result &= addString("  ", tapLevel) & oprandCodeMulti & $opCount & ";\n";
+  else:
+    result &= addString("  ",tapLevel) & oprandCode;
+
+proc generateCodeC(code: string, staticDepth: bool, verbose: bool): string = 
+  var index = 0;
+  var tapLevel = 1;
+  var code = code;
   var result = "";
-  if increasedSize:
+  if staticDepth:
     result = "#include <stdio.h>\nchar tape[" & $(2000000000) & "];\nchar *ptr;\nint main() {\n  ptr=tape;\n";
   else:
     var maxDepth = evalCode(code, verbose)
     result = "#include <stdio.h>\nchar tape[" & $maxDepth & "];\nchar *ptr;\nint main() {\n  ptr=tape;\n";
 
   for i, op in code:
-    if i == j:
+    if i == index:
       case code[i]:
         of '>':
-          if code[i+1] == '>':
-            while whileFlag:
-              if code[i+opCount] == '>':
-                inc opCount;
-              else:
-                whileFlag = false;
-            j += opCount-1;
-            result &= addString("  ", tapLevel) & "ptr+=" & $opCount & ";\n";
-            opCount = 1;
-            whileFlag = true;
-          else:
-            result &= addString("  ",tapLevel) & "ptr++;\n";
+          oprandCombiner(code, i, index, tapLevel, result, '>', "ptr++;\n", "ptr+=")
         of '<':
-          if code[i+1] == '<':
-            while whileFlag:
-              if code[i+opCount] == '<':
-                inc opCount;
-              else:
-                whileFlag = false;
-            j += opCount-1;
-            result &= addString("  ", tapLevel) & "ptr-=" & $opCount & ";\n";
-            opCount = 1;
-            whileFlag = true;
-          else:
-            result &= addString("  ",tapLevel) & "ptr--;\n";
+          oprandCombiner(code, i, index, tapLevel, result, '<', "ptr--;\n", "ptr-=")
         of '+':
-          if code[i+1] == '+':
-            while whileFlag:
-              if code[i+opCount] == '+':
-                inc opCount;
-              else:
-                whileFlag = false;
-            result &= addString("  ", tapLevel) & "(*ptr)+=" & $opCount & ";\n";
-            j += opCount-1;
-            opCount = 1;
-            whileFlag = true;
-          else:
-            result &= addString("  ",tapLevel) & "(*ptr)++;\n";
+          oprandCombiner(code, i, index, tapLevel, result, '+', "(*ptr)++;\n", "(*ptr)+=")
         of '-':
-          if code[i+1] == '-':
-            while whileFlag:
-              if code[i+opCount] == '-':
-                inc opCount;
-              else:
-                whileFlag = false;
-            j += opCount-1;
-            result &= addString("  ", tapLevel) & "(*ptr)-=" & $opCount & ";\n";
-            opCount = 1;
-            whileFlag = true;
-          else:
-            result &= addString("  ",tapLevel) & "(*ptr)--;\n";
+          oprandCombiner(code, i, index, tapLevel, result, '-', "(*ptr)--;\n", "(*ptr)-=")
         of '.':
           result &= addString("  ",tapLevel) & "putchar(*ptr);\n"
         of ',':
@@ -150,18 +118,18 @@ proc generateCodeC(code: string, increasedSize: bool, verbose: bool): string =
         else:
           if verbose:
             echo "invalid char: ", op; 
-      inc j;
+      inc index;
   return result & "return 1;\n}";
 
-proc generateCode(code: string, lang: string = "C", increasedSize: bool, verbose: bool):string =
+proc generateCode(code: string, lang: string = "C", staticDepth: bool, verbose: bool):string =
   case lang:
     of "C":
-      return generateCodeC(code, increasedSize, verbose)
+      return generateCodeC(code, staticDepth, verbose)
 
 when isMainModule:
   var inputFileName = "";
   var outputFileName = "";
-  var increasedSize = false;
+  var staticDepth = false;
   var verbose = false;
   var lang = "C"
   for i in 1..paramCount():
@@ -178,10 +146,8 @@ when isMainModule:
         lang = paramStr(i+1);
       of "-l":
         lang = paramStr(i+1);
-      of "--size":
-        increasedSize = true
-      of "-s":
-        increasedSize = true
+      of "--staticDepth":
+        staticDepth = true
       of "--verbose":
         verbose = true
-  writeToFile(generateCode(readFromFile(inputFileName), lang, increasedSize, verbose),outputFileName)
+  writeToFile(generateCode(readFromFile(inputFileName), lang, staticDepth, verbose),outputFileName)
