@@ -4,9 +4,7 @@ import os
 import /libs/files/src/files
 #String manipulation
 import /libs/strutil/src/strutil
-#[
-  
-]#
+
 #-----Depthscan-----#
 proc depthScanLoop*(code: string, startIndex: int, oldLoop, maxDepth, newIndex, currentDepth: var int, verbose: bool) = 
   ##[
