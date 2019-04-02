@@ -12,6 +12,7 @@ Python(\*)
 ## Usage:
 BFC ARGS
 ### ARGS:
+-h, --help: prints usage guide.  
 -i, --input: The input file.  
 -o, --output: The output file.  
 -C: Compiles to C (DEFAULT).  
