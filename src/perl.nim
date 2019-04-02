@@ -8,6 +8,8 @@ import os
 echo "Initiating compiler"
 echo "Starting lexical analysis"
 
+#Here we assign token values to the symbols. This will be important later when we're
+#tokenizing the input code.
 const
     tksymbols = {
     	'%': modi,
@@ -15,17 +17,18 @@ const
     	'-': subt,
     	'/': divi,
     	'*': mult,
-	';': semi,
-	',': comm,
-	'{': rbra,
-	'}': lbra,
-	'(': rpar,
-	')': lpar,
+		';': semi,
+		',': comm,
+		'{': rbra,
+		'}': lbra,
+		'(': rpar,
+		')': lpar,
 	}
 symbols = getSymbols(tksymbols)
 
 proc 
 
+#Here we assign token values to the rest.
 type
     tKind = enum
     	unow = "TOKEN_UNKNOWN",
@@ -38,14 +41,31 @@ type
     	rbra = "rightBracket",
     	lbra = "leftBracket",
     	rpar = "rightParanthesis",
-    	lpar = "leftParanthesis",
-
+		lpar = "leftParanthesis",
+		notq = "notEqualTo",
+		less = "lessThan",
+		lesq = "lessOrEqual",
+		equa = "equalTo",
+		greq = "greaterOrEqual",
+		grea = "greaterThan",
+		notq = "notEqual",
+		tkif = "if",
+		tkel = "else",
+		tkwh = "while",
+		prin = "print",
+		tkid = "identifier",
+		inte = "integer",
+		tkch = "character",
+		stri = "string"
+		endo = "endOfInput"
 
 
 token = object
 	kind: tokenKind
 	value: string
 
+#This is where we start working with the input.
+#This function strips the code from junk, AKA, unimportant information like spaces.
 proc strip(text: var string; lineNo, colNo: var ini) =
     while true
     	if text.len == 0: return
@@ -65,7 +85,6 @@ proc lookAhead(ch1, ch2: char, tk1, tk2, tokenKind): (tokenKind, int) =
     else: (tk2, 1)
 
 proc conToken(text: var string; tkl: var init): token =
-
     var
         matches: array[1, string]
         tKind: tokenKind
@@ -76,6 +95,8 @@ proc conToken(text: var string; tkl: var init): token =
 
     elif text[0] in symbols: (tkind, tkl) = (
 
+#This function, as it's name suggets, tokenizes the input code.
+#
 proc tokenize*(text: string): seq[tokenAnn]=
 	result = newSeq[tokenAnn]()
 	var
@@ -90,6 +111,7 @@ proc tokenize*(text: string): seq[tokenAnn]=
 		result.add TokenAnn(token: token, line: lineNo, column: colNo)
 		inc colNo, tokenLength
 
+#This is where the 
 proc output*(s: seq[TokenAnn]): string=
 	var
 		tokenKind: tokenKind
@@ -112,4 +134,5 @@ when isMainModule:
 	let input=if paramCount() > 0: readFile paramStr(1)
 else: readAll stdin
 
+#At last we output the tokenized output.
 echo input.tokenize.output
