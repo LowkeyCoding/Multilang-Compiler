@@ -86,13 +86,12 @@ proc depthScan*(code: string, verbose: bool): int =
   return maxDepth
 
 #-----Code optimization-----#
-proc operandCombiner*(code: string, currentIndex: int, trueIndex, tapLevel: var int, result: var string, operand: char, operandCode: string, operandCodeMulti: string) =
+proc operandCombiner*(code: string, index, tapLevel: var int, result: var string, operand: char, operandCode: string, operandCodeMulti: string) =
   ##[
       :USAGE: operandCombiner(code: string, currentIndex: int, trueIndex, tapLevel: var int, result: var string, operand: char, operandCode: string, operandCodeMulti: string)
       :BEHAVIOR: Combines operands of the same type, and adds the the combined operands to result.
       :code: The code to scan through.
-      :currentIndex: Used to keep track of the loops index.
-      :trueIndex: Used to keep track of the real index.
+      :index: Used to keep track of the current location in the code.
       :tapLevels: Used to keep track of indetation.
       :result: Used to store the generated code.
       :operand: The operand to combine.
@@ -101,13 +100,13 @@ proc operandCombiner*(code: string, currentIndex: int, trueIndex, tapLevel: var 
   ]##
   var whileFlag = true;
   var opCount = 1;
-  if(code[currentIndex+1] == operand):
+  if(code[index+1] == operand):
     while whileFlag:
-      if code[currentIndex+opCount] == operand:
+      if code[index+opCount] == operand:
         inc opCount;
       else:
         whileFlag = false;
-    trueIndex += opCount-1;
+        index += opCount-1;
     result &= addString("  ", tapLevel) & operandCodeMulti & $opCount & ";\n";
   else:
     result &= addString("  ",tapLevel) & operandCode;
@@ -121,7 +120,7 @@ proc generateCodeC*(code: string, staticDepth: bool, verbose: bool): string =
       :staticDepth: Toggles static vs dynamic depth. Static is close to 32bit limit to give support for more systems.
       :verbose: Toggles console output.
   ]##
-  var trueIndex = 0;
+  var index = 0;
   var tapLevel = 1;
   var result = "";
   if staticDepth:
@@ -129,32 +128,30 @@ proc generateCodeC*(code: string, staticDepth: bool, verbose: bool): string =
   else:
     var maxDepth = depthScan(code, verbose)
     result = "#include <stdio.h>\nchar tape[" & $maxDepth & "];\nchar *ptr;\nint main() {\n  ptr=tape;\n";
-
-  for currentIndex, operand in code:
-    if currentIndex == trueIndex:
-      case code[currentIndex]:
-        of '>':
-          operandCombiner(code, currentIndex, trueIndex, tapLevel, result, '>', "ptr++;\n", "ptr+=")
-        of '<':
-          operandCombiner(code, currentIndex, trueIndex, tapLevel, result, '<', "ptr--;\n", "ptr-=")
-        of '+':
-          operandCombiner(code, currentIndex, trueIndex, tapLevel, result, '+', "(*ptr)++;\n", "(*ptr)+=")
-        of '-':
-          operandCombiner(code, currentIndex, trueIndex, tapLevel, result, '-', "(*ptr)--;\n", "(*ptr)-=")
-        of '.':
-          result &= addString("  ",tapLevel) & "putchar(*ptr);\n"
-        of ',':
-          result &= addString("  ",tapLevel) & "*ptr=getchar();\n"
-        of '[':
-          result &= addString("  ",tapLevel) & "while (*ptr){\n"
-          inc tapLevel
-        of ']':
-          result &= addString("  ",tapLevel) & "}\n"
-          dec tapLevel
-        else:
-          if verbose:
-            echo "invalid char: ", operand;
-      inc trueIndex;
+  while index != len(code):
+    case code[index]:
+      of '>':
+        operandCombiner(code, index, tapLevel, result, '>', "ptr++;\n", "ptr+=")
+      of '<':
+        operandCombiner(code, index, tapLevel, result, '<', "ptr--;\n", "ptr-=")
+      of '+':
+        operandCombiner(code, index, tapLevel, result, '+', "(*ptr)++;\n", "(*ptr)+=")
+      of '-':
+        operandCombiner(code, index, tapLevel, result, '-', "(*ptr)--;\n", "(*ptr)-=")
+      of '.':
+        result &= addString("  ",tapLevel) & "putchar(*ptr);\n"
+      of ',':
+        result &= addString("  ",tapLevel) & "*ptr=getchar();\n"
+      of '[':
+        result &= addString("  ",tapLevel) & "while (*ptr){\n"
+        inc tapLevel
+      of ']':
+        result &= addString("  ",tapLevel) & "}\n"
+        dec tapLevel
+      else:
+        if verbose:
+          echo "invalid char: ", code[index];
+    inc index;
   return result & "return 1;\n}";
 
 #-----Functioncallers-----#
