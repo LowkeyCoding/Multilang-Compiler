@@ -169,6 +169,19 @@ proc generateCode*(code: string, lang: string = "C", staticDepth: bool, verbose:
       return generateCodeC(code, staticDepth, verbose)
 
 #-----Userinput handler-----#
+proc help*() =
+  ##[
+      :USAGE: help()
+      :BEHAVIOR: Prints usage guide to console.
+  ]##
+  echo """
+    -h --help: prints out help
+    -i, --input: The input file.
+    -o, --output: The output file.
+    -C: Compiles to C (DEFAULT).
+    --staticDepth: Use static tape size of \"2000000000\".
+    --verbose: Enable verbose output. 
+  """
 proc userInput*()=
   ##[
       :USAGE: userInput()
@@ -178,9 +191,16 @@ proc userInput*()=
   var outputFileName = "";
   var staticDepth = false;
   var verbose = false;
-  var lang = "C"
+  var lang = "C";
+  var unkownParameter = false;
   for i in 1..paramCount():
     case paramStr(i):
+      of "--help":
+        help()
+        unkownParameter = true;
+      of "-h":
+        help();
+        unkownParameter = true;
       of "--input":
         inputFileName = paramStr(i+1);
       of "-i":
@@ -197,7 +217,13 @@ proc userInput*()=
         staticDepth = true
       of "--verbose":
         verbose = true
-  writeToFile(generateCode(readFromFile(inputFileName), lang, staticDepth, verbose),outputFileName)
+      else:
+        if i > 4 and match(paramStr(i),"-"):
+          echo "Unkown parameter: " & paramStr(i)
+          help();
+          unkownParameter = true;
+  if unkownParameter != true:
+    writeToFile(generateCode(readFromFile(inputFileName), lang, staticDepth, verbose),outputFileName)
 
 when isMainModule:
   userInput()
