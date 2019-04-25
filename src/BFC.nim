@@ -41,6 +41,8 @@ proc depthScanLoop*(code: string, startIndex: int, oldLoop, maxDepth, newIndex, 
       elif code[index] == '<':
         dec currentDepth;
       elif code[index] == ']':
+        if verbose:
+          echo "exit loop"
         break;
       else:
         loop = 0;
@@ -86,7 +88,7 @@ proc depthScan*(code: string, verbose: bool): int =
   return maxDepth
 
 #-----Code optimization-----#
-proc operandCombiner*(code: string, index, tapLevel: var int, result: var string, operand: char, operandCode: string, operandCodeMulti: string) =
+proc operandCombiner*(code: string, index, tapLevel: var int, result: var string, operand: char, operandCode: string, operandCodeMulti: string, verbose: bool) =
   ##[
       :USAGE: operandCombiner(code: string, currentIndex: int, trueIndex, tapLevel: var int, result: var string, operand: char, operandCode: string, operandCodeMulti: string)
       :BEHAVIOR: Combines operands of the same type, and adds the the combined operands to result.
@@ -105,6 +107,8 @@ proc operandCombiner*(code: string, index, tapLevel: var int, result: var string
       if code[index+opCount] == operand:
         inc opCount;
       else:
+        if verbose:
+          echo "Combined: " & operand & " " & $opCount & " times"
         whileFlag = false;
         index += opCount-1;
     result &= addString("  ", tapLevel) & operandCodeMulti & $opCount & ";\n";
@@ -128,16 +132,18 @@ proc generateCodeC*(code: string, staticDepth: bool, verbose: bool): string =
   else:
     var maxDepth = depthScan(code, verbose)
     result = "#include <stdio.h>\nchar tape[" & $maxDepth & "];\nchar *ptr;\nint main() {\n  ptr=tape;\n";
+  if verbose:
+    echo "Code Generation started"
   while index != len(code):
     case code[index]:
       of '>':
-        operandCombiner(code, index, tapLevel, result, '>', "ptr++;\n", "ptr+=")
+        operandCombiner(code, index, tapLevel, result, '>', "ptr++;\n", "ptr+=", verbose)
       of '<':
-        operandCombiner(code, index, tapLevel, result, '<', "ptr--;\n", "ptr-=")
+        operandCombiner(code, index, tapLevel, result, '<', "ptr--;\n", "ptr-=", verbose)
       of '+':
-        operandCombiner(code, index, tapLevel, result, '+', "(*ptr)++;\n", "(*ptr)+=")
+        operandCombiner(code, index, tapLevel, result, '+', "(*ptr)++;\n", "(*ptr)+=", verbose)
       of '-':
-        operandCombiner(code, index, tapLevel, result, '-', "(*ptr)--;\n", "(*ptr)-=")
+        operandCombiner(code, index, tapLevel, result, '-', "(*ptr)--;\n", "(*ptr)-=", verbose)
       of '.':
         result &= addString("  ",tapLevel) & "putchar(*ptr);\n"
       of ',':
@@ -166,6 +172,8 @@ proc generateCode*(code: string, lang: string = "C", staticDepth: bool, verbose:
   ]##
   case lang:
     of "C":
+      if verbose:
+          echo "Selected language: C"
       return generateCodeC(code, staticDepth, verbose)
 
 #-----Userinput handler-----#
@@ -182,6 +190,7 @@ proc help*() =
     --staticDepth: Use static tape size of \"2000000000\".
     --verbose: Enable verbose output. 
   """
+
 proc userInput*()=
   ##[
       :USAGE: userInput()
