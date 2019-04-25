@@ -180,7 +180,7 @@ proc tokenize*(text: string): seq[TokenAnn]=
 #This is where the 
 proc output*(s: seq[TokenAnn]): string=
   var
-    tokenKind: tokenKind
+    tokenKind: TokenKind
     value: string
     line, column: int
 
@@ -191,7 +191,7 @@ proc output*(s: seq[TokenAnn]): string=
     value=TokenAnn.token.value
     result.add(
       fmt"{line:>5}{column:>7}{tokenKind:<15}{value}"
-        .strip(leading=false) & "\n"))
+        .strip(leading=false) & "\n")
 
 when isMainModule:
   import os
